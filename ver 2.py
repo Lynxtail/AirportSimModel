@@ -5,8 +5,6 @@
 from math import log
 from random import random
 import numpy as np
-from scipy import rand
-import sympy as sp
 
 # описание требования
 class Demand:
