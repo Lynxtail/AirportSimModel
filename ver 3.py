@@ -8,69 +8,11 @@
 # (для моделирования используем библиотеку simpy)
 
 from math import log
-from random import random, seed
+from random import random
 import numpy as np
 import simpy
-
-class Demand:
-    def __init__(self, num, t_born=0, t_in_1=0, t_serve_1=0, t_out_1=0, 
-    t_in_2=0, t_serve_2=0, t_out_2=0):
-        self.num = num
-        self.t_born = t_born
-        self.t_in_1 = t_in_1 
-        self.t_serve_1 = t_serve_1
-        self.t_out_1= t_out_1 
-        self.t_in_2 = t_in_2 
-        self.t_serve_2 = t_serve_2
-        self.t_out_2= t_out_2 
-        self.v_1 = self.t_out_1 - self.t_serve_1
-        self.w_1 = self.t_serve_1 - self.t_in_1
-        self.u_1 = self.t_out_1 - self.t_in_1
-        self.v_2 = self.t_out_2 - self.t_serve_2
-        self.w_2 = self.t_serve_2 - self.t_in_2
-        self.u_2 = self.t_out_2 - self.t_in_2
-
-    def calc_times(self):
-        self.v_1 += self.t_out_1 - self.t_serve_1
-        self.w_1 += self.t_serve_1 - self.t_in_1
-        self.u_1 += self.t_out_1 - self.t_in_1
-        self.v_2 += self.t_out_2 - self.t_serve_2
-        self.w_2 += self.t_serve_2 - self.t_in_2
-        self.u_2 += self.t_out_2 - self.t_in_2
-    
-    def get_info(self):
-        return f'{self.num} {self.v_1} {self.w_1} {self.u_1} {self.v_2} {self.w_2} {self.u_2}\n'
-
-# класс, описывающий сеть
-class Airport:
-    def __init__(self, env, cnt_runways, cnt_servers, mu_runway, 
-    mu_server, p_out=3):
-        self.env = env
-        self.runway = simpy.Resource(env, cnt_runways)
-        self.server = simpy.Resource(env, cnt_servers)
-        self.mu_runway = mu_runway
-        self.mu_server = mu_server
-        self.p_out = p_out
-
-    # обслуживание на взлётке
-    def service_runway(self, demand:Demand):
-        # yield self.env.timeout(rd.expovariate(self.mu))
-        yield self.env.timeout(env.now - log(random()) / 
-            self.mu_runway)
-        global cnt_demands
-        cnt_demands[0].append(self.server.count - 1)
-        
-        print(f'Самолёт {demand.num} прошёл взлётку в {self.env.now}')
-           
-    # обслуживание на стоянке
-    def service_server(self, demand:Demand):
-        # yield self.env.timeout(rd.expovariate(self.mu))
-        yield self.env.timeout(env.now - log(random()) / 
-            self.mu_server)
-        global cnt_demands
-        cnt_demands[1].append(self.server.count - 1)
-        print(f'Самолёт {demand.num} прошёл обслуживание в {self.env.now}')
-
+from Demand import Demand
+from Airport import Airport
 
 # функция поведения самолёта на взлётке
 def go_to_runway(env:simpy.Environment, demand:Demand, system:Airport):
