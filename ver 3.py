@@ -9,6 +9,7 @@
 
 from math import log
 from random import random
+import sys
 import numpy as np
 import simpy
 from Demand import Demand
@@ -37,9 +38,9 @@ def go_to_runway(env:simpy.Environment, demand:Demand, system:Airport):
     else:
         # yield env.timeout(env.now - log(random()) / 
         #   (system.mu_runway * (1 - system.p_out)))
-        global cnt_demands
-        cnt_demands[1].append(system.server.count + 1)
+        system.cnt_demands[1].append(system.server.count + 1)
         print(f'Самолёт {demand.num} поступил на обслуживание в {env.now}')
+        print(f'В момент {env.now} было {system.runway.count} + {system.server.count}')
         env.process(go_to_server(env, demand, system))
 
 # функция поведения самолёта на стоянке
@@ -58,34 +59,26 @@ def go_to_server(env:simpy.Environment, demand:Demand, system:Airport):
     demand.calc_times()
 
 # функция запуска работы модели
-def run_system(env:simpy.Environment, cnt_runways, cnt_servers, lambda_0, 
-mu_runway, mu_server):
-    system = Airport(env, cnt_runways, cnt_servers, mu_runway, 
-        mu_server)
+def run_system(env:simpy.Environment, system:Airport):
     cnt = 1
     demand = Demand(cnt, env.now)
     
     print(f'Самолёт {demand.num} поступил на взлётку в {env.now}')
     env.process(go_to_runway(env, demand, system))
     
-    global cnt_demands
-    cnt_demands[0].append(system.runway.count + 1)
+    print(f'В момент {env.now} было {system.runway.count} + {system.server.count}')
+    system.cnt_demands[0].append(system.runway.count + 1)
     
     while True:
         # yield env.timeout(rd.expovariate(lambda_))
         yield env.timeout(env.now - log(random()) / lambda_0)
-        cnt_demands[0].append(system.runway.count + 1)
-        
+        system.cnt_demands[0].append(system.runway.count + 1) 
         cnt += 1
         demand = Demand(cnt, env.now)
         print(f'Самолёт {demand.num} поступил на взлётку в {env.now}')
+        print(f'В момент {env.now} было {system.runway.count} + {system.server.count}')  
         env.process(go_to_runway(env, demand, system))  
 
-# cnt = 100
-# all_times = []
-# all_demands = []
-# for i in range(cnt):
-# print(f'\nПрогон {i+1}:')
 
 # Начальные данные
 cnt_runways = 1 # число взлёток
@@ -94,14 +87,12 @@ lambda_0 = 1
 mu_runway = 2
 mu_server = 3
 
-cnt_demands = [[], []]
-
 # Запуск моделирования
 times = open('times_out.txt', 'w')
 times.close()
 env = simpy.Environment()
-env.process(run_system(env, cnt_runways, cnt_servers, lambda_0, 
-    mu_runway, mu_server))
+system = Airport(env, cnt_runways, cnt_servers, mu_runway, mu_server)
+env.process(run_system(env, system))
 env.run(until=10)
 
 # Результаты
@@ -129,21 +120,22 @@ print(f'Среднее время ожидания на стоянке: {w[1]}')
 print(f'\nСреднее время пребывания на взлётке: {u[0]}')
 print(f'Среднее время пребывания на стоянке: {u[1]}')
 
-average_cnt = []
-for item in cnt_demands:
-    if len(item) == 0:
-        average_cnt.append(0)
+states = [[], []]
+p = [[], []]
+for item in system.cnt_demands[0]:
+    if item in states[0]:
+        continue
     else:
-        average_cnt.append(np.mean(item))
-# print(cnt_demands)
-print(f'\nСреднее число требований на взлётке: {average_cnt[0]}')
-print(f'Среднее число требований на взлётке: {average_cnt[1]}\n')
-
-# all_times.append(average_time)
-# all_demands.append(average_cnt)
-
-# print('-'*50)
-# print(f'\nСреднее время пребывания требования в сети: \
-# {np.mean([sum(all_times[i]) for i in range(len(all_times))])}')
-# print(f'Среднее число требований в сети: \
-# {np.mean([sum(all_demands[i]) for i in range(len(all_demands))])}')
+        states[0].append(item)
+        p[0].append(system.cnt_demands[0].count(item) / len(system.cnt_demands[0]))
+for item in system.cnt_demands[1]:
+    if item in states[1]:
+        continue
+    else:
+        states[1].append(item)
+        p[1].append(system.cnt_demands[1].count(item) / len(system.cnt_demands[1]))
+for item in p:
+    if len(item) == 0:
+        item.append(1)
+        break
+print(p)
