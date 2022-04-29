@@ -138,4 +138,7 @@ for item in p:
     if len(item) == 0:
         item.append(1)
         break
-print(p)
+print(f'\nСтационарное распределение:\n{p}')
+
+n = [[sum([item * p[0][item] for item in range(len(p[0]))])], [sum([item * p[1][item] for item in range(len(p[1]))])]]
+print(f'\nСреднее число требований в сети:\n{n}')
