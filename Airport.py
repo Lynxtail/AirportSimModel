@@ -21,15 +21,15 @@ class Airport:
         # yield self.env.timeout(rd.expovariate(self.mu))
         yield self.env.timeout(self.env.now - log(random.random()) / 
             self.mu_runway)
-        self.cnt_demands[0].append(self.runway.count - 1)
+        self.cnt_demands[0].append(self.runway.count + len(self.runway.queue) - 1)
         print(f'Самолёт {demand.num} прошёл взлётку в {self.env.now}')
-        print(f'В момент {self.env.now} было {self.runway.count} + {self.server.count}')
+        print(f'В момент {self.env.now} было {self.runway.count + len(self.runway.queue)} + {self.server.count + len(self.server.queue)}')
            
     # обслуживание на стоянке
     def service_server(self, demand:Demand):
         # yield self.env.timeout(rd.expovariate(self.mu))
         yield self.env.timeout(self.env.now - log(random.random()) / 
             self.mu_server)
-        self.cnt_demands[1].append(self.server.count - 1)
+        self.cnt_demands[1].append(self.server.count + len(self.server.queue) - 1)
         print(f'Самолёт {demand.num} прошёл обслуживание в {self.env.now}')
-        print(f'В момент {self.env.now} было {self.runway.count} + {self.server.count}')
+        print(f'В момент {self.env.now} было {self.runway.count + len(self.runway.queue)} + {self.server.count + len(self.server.queue)}')

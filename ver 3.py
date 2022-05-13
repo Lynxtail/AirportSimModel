@@ -9,7 +9,6 @@
 
 from math import log
 from random import random
-import sys
 import numpy as np
 import simpy
 from Demand import Demand
@@ -38,9 +37,9 @@ def go_to_runway(env:simpy.Environment, demand:Demand, system:Airport):
     else:
         # yield env.timeout(env.now - log(random()) / 
         #   (system.mu_runway * (1 - system.p_out)))
-        system.cnt_demands[1].append(system.server.count + 1)
+        system.cnt_demands[1].append(system.server.count + len(system.server.queue) + 1)
         print(f'Самолёт {demand.num} поступил на обслуживание в {env.now}')
-        print(f'В момент {env.now} было {system.runway.count} + {system.server.count}')
+        print(f'В момент {env.now} было {system.runway.count + len(system.runway.queue)} + {system.server.count + len(system.server.queue)}')
         env.process(go_to_server(env, demand, system))
 
 # функция поведения самолёта на стоянке
@@ -66,17 +65,17 @@ def run_system(env:simpy.Environment, system:Airport):
     print(f'Самолёт {demand.num} поступил на взлётку в {env.now}')
     env.process(go_to_runway(env, demand, system))
     
-    print(f'В момент {env.now} было {system.runway.count} + {system.server.count}')
-    system.cnt_demands[0].append(system.runway.count + 1)
+    print(f'В момент {env.now} было {system.runway.count + len(system.runway.queue)} + {system.server.count + len(system.server.queue)}')
+    system.cnt_demands[0].append(system.runway.count + len(system.runway.queue) + 1)
     
     while True:
         # yield env.timeout(rd.expovariate(lambda_))
         yield env.timeout(env.now - log(random()) / lambda_0)
-        system.cnt_demands[0].append(system.runway.count + 1) 
+        system.cnt_demands[0].append(system.runway.count + len(system.runway.queue) + 1) 
         cnt += 1
         demand = Demand(cnt, env.now)
         print(f'Самолёт {demand.num} поступил на взлётку в {env.now}')
-        print(f'В момент {env.now} было {system.runway.count} + {system.server.count}')  
+        print(f'В момент {env.now} было {system.runway.count + len(system.runway.queue)} + {system.server.count + len(system.server.queue)}')  
         env.process(go_to_runway(env, demand, system))  
 
 
@@ -122,6 +121,8 @@ print(f'Среднее время пребывания на стоянке: {u[1
 
 states = [[], []]
 p = [[], []]
+
+system.cnt_demands = list(map(sorted, system.cnt_demands))
 for item in system.cnt_demands[0]:
     if item in states[0]:
         continue
