@@ -13,6 +13,7 @@ import numpy as np
 import simpy
 from Demand import Demand
 from Airport import Airport
+from itertools import zip_longest
 
 # функция поведения самолёта на взлётке
 def go_to_runway(env:simpy.Environment, demand:Demand, system:Airport):
@@ -79,67 +80,162 @@ def run_system(env:simpy.Environment, system:Airport):
         env.process(go_to_runway(env, demand, system))  
 
 
+
+
 # Начальные данные
+cnt_executes = 10
+t_max = 10000
+result = open('results.txt', 'w')
+result.close()
+
 cnt_runways = 1 # число взлёток
 cnt_servers = 3 # число мест для тех обслуживания
 lambda_0 = 1 
 mu_runway = 2
 mu_server = 3
 
-# Запуск моделирования
-times = open('times_out.txt', 'w')
-times.close()
-env = simpy.Environment()
-system = Airport(env, cnt_runways, cnt_servers, mu_runway, mu_server)
-env.process(run_system(env, system))
-env.run(until=10)
 
-# Результаты
-times = open('times_out.txt', 'r')
-v = [[], []]
-w = [[], []]
-u = [[], []]
-for line in times:
-    _, v_1_, w_1_, u_1_, v_2_, w_2_, u_2_ = [float(item) for item in line.split(' ')]
-    v[0].append(v_1_)
-    w[0].append(w_1_)
-    u[0].append(u_1_)
-    v[1].append(v_2_)
-    w[1].append(w_2_)
-    u[1].append(u_2_)
-times.close()
-v = [[np.mean(v[0])], [np.mean(v[1])]]
-w = [[np.mean(w[0])], [np.mean(w[1])]]
-u = [[np.mean(u[0])], [np.mean(u[1])]]
+for _ in range(cnt_executes):
+    # Запуск моделирования
+    times = open('times_out.txt', 'w')
+    times.close()
+    env = simpy.Environment()
+    system = Airport(env, cnt_runways, cnt_servers, mu_runway, mu_server)
+    env.process(run_system(env, system))
+    env.run(until=t_max)
 
+    # Результаты
+    times = open('times_out.txt', 'r')
+    v = [[], []]
+    w = [[], []]
+    u = [[], []]
+    for line in times:
+        _, v_1_, w_1_, u_1_, v_2_, w_2_, u_2_ = [float(item) for item in line.split(' ')]
+        v[0].append(v_1_)
+        w[0].append(w_1_)
+        u[0].append(u_1_)
+        v[1].append(v_2_)
+        w[1].append(w_2_)
+        u[1].append(u_2_)
+    times.close()
+    v = [[np.mean(v[0])], [np.mean(v[1])]]
+    w = [[np.mean(w[0])], [np.mean(w[1])]]
+    u = [[np.mean(u[0])], [np.mean(u[1])]]
+
+    print(f'\nСреднее время обслуживания на взлётке: {v[0]}')
+    print(f'Среднее время обслуживания на стоянке: {v[1]}')
+    print(f'\nСреднее время ожидания на взлётке: {w[0]}')
+    print(f'Среднее время ожидания на стоянке: {w[1]}')
+    print(f'\nСреднее время пребывания на взлётке: {u[0]}')
+    print(f'Среднее время пребывания на стоянке: {u[1]}')
+
+    states = [[], []]
+    p = [[], []]
+
+    system.cnt_demands = list(map(sorted, system.cnt_demands))
+    for item in system.cnt_demands[0]:
+        if item in states[0]:
+            continue
+        else:
+            states[0].append(item)
+            p[0].append(system.cnt_demands[0].count(item) / len(system.cnt_demands[0]))
+    for item in system.cnt_demands[1]:
+        if item in states[1]:
+            continue
+        else:
+            states[1].append(item)
+            p[1].append(system.cnt_demands[1].count(item) / len(system.cnt_demands[1]))
+    for item in p:
+        if len(item) == 0:
+            item.append(1)
+            break
+    print(f'\nСтационарное распределение:\n{p}')
+
+    n = [[sum([item * p[0][item] for item in range(len(p[0]))])], [sum([item * p[1][item] for item in range(len(p[1]))])]]
+    print(f'\nСреднее число требований в сети:\n{n}')
+    
+    result = open('results.txt', 'a')
+    result.write(f'{v};{w};{u};{p};{n}\n')
+    result.close()
+
+
+# анализ
+v_s = []
+w_s = []
+u_s = []
+p_s = []
+n_s = []
+result = open('results.txt', 'r')
+for line in result:
+    v_, w_, u_, p_, n_ = [item for item in line.split(';')]
+    v_s.append(v_)
+    w_s.append(w_)
+    u_s.append(u_)
+    p_s.append(p_)
+    n_s.append(n_)
+result.close()
+
+def string_to_list(s_list:str):
+    ans = [[], []]
+    tmp = s_list.split(', ')
+    i = 0
+    for item in tmp:
+        if item[-1] != ']':
+            item = item.replace('[', '')
+            item = item.replace(']', '')
+            ans[i].append(float(item))
+            continue
+        else: 
+            if item[-2] == ']':
+                item = item.replace('[', '')
+                item = item.replace(']', '')
+                ans[i].append(float(item))
+                break
+            item = item.replace('[', '')
+            item = item.replace(']', '')
+            ans[i].append(float(item))
+            i = 1
+    return ans
+
+v_s = [string_to_list(item) for item in v_s]
+w_s = [string_to_list(item) for item in w_s]
+u_s = [string_to_list(item) for item in u_s]
+p_s = [string_to_list(item) for item in p_s]
+n_s = [string_to_list(item) for item in n_s]
+
+def get_mean(l):
+    tmp_1 = []
+    tmp_2 = []
+    for item in l:
+        tmp_1.extend(item[0])
+        tmp_2.extend(item[1])
+    tmp_1 = np.mean(tmp_1)
+    tmp_2 = np.mean(tmp_2)
+    return tmp_1, tmp_2
+
+v = list(get_mean(v_s))
+w = list(get_mean(w_s))
+u = list(get_mean(u_s))
+n = list(get_mean(n_s))
+
+tmp_1 = []
+tmp_2 = []
+for item in p_s:
+    tmp_1 = [sum(i) for i in zip_longest(item[0], tmp_1, fillvalue=0)]
+    tmp_2 = [sum(i) for i in zip_longest(item[1], tmp_2, fillvalue=0)]
+tmp_1 = [item / len(p_s) for item in tmp_1]
+tmp_2 = [item / len(p_s) for item in tmp_2]
+p = [tmp_1, tmp_2]
+
+print('\n', '_'*50)
+print(f'Результаты по итогам {cnt_executes} испытаний:')
 print(f'\nСреднее время обслуживания на взлётке: {v[0]}')
 print(f'Среднее время обслуживания на стоянке: {v[1]}')
 print(f'\nСреднее время ожидания на взлётке: {w[0]}')
 print(f'Среднее время ожидания на стоянке: {w[1]}')
 print(f'\nСреднее время пребывания на взлётке: {u[0]}')
 print(f'Среднее время пребывания на стоянке: {u[1]}')
-
-states = [[], []]
-p = [[], []]
-
-system.cnt_demands = list(map(sorted, system.cnt_demands))
-for item in system.cnt_demands[0]:
-    if item in states[0]:
-        continue
-    else:
-        states[0].append(item)
-        p[0].append(system.cnt_demands[0].count(item) / len(system.cnt_demands[0]))
-for item in system.cnt_demands[1]:
-    if item in states[1]:
-        continue
-    else:
-        states[1].append(item)
-        p[1].append(system.cnt_demands[1].count(item) / len(system.cnt_demands[1]))
-for item in p:
-    if len(item) == 0:
-        item.append(1)
-        break
-print(f'\nСтационарное распределение:\n{p}')
-
-n = [[sum([item * p[0][item] for item in range(len(p[0]))])], [sum([item * p[1][item] for item in range(len(p[1]))])]]
-print(f'\nСреднее число требований в сети:\n{n}')
+print(f'\nСтационарное распределение состояний на взлётке: {p[0]}')
+print(f'Стационарное распределение состояний на стоянке: {p[1]}')
+print(f'\nСреднее число требований на взлётке: {n[0]}')
+print(f'Среднее число требований на стоянке: {n[1]}')
