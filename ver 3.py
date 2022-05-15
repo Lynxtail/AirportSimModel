@@ -58,8 +58,13 @@ def go_to_server(env:simpy.Environment, demand:Demand, system:Airport):
     # рассчёт м.о.
     demand.calc_times()
 
+    system.cnt_demands[0].append(system.runway.count + len(system.runway.queue) + 1)
+    print(f'Самолёт {demand.num} поступил на взлётку в {env.now}')
+    print(f'В момент {env.now} было {system.runway.count + len(system.runway.queue)} + {system.server.count + len(system.server.queue)}')
+    env.process(go_to_runway(env, demand, system))
+
 # функция запуска работы модели
-def run_system(env:simpy.Environment, system:Airport):
+def run_system(env:simpy.Environment, system:Airport, source_distribution, std_0):
     cnt = 1
     demand = Demand(cnt, env.now)
     
@@ -70,8 +75,14 @@ def run_system(env:simpy.Environment, system:Airport):
     system.cnt_demands[0].append(system.runway.count + len(system.runway.queue) + 1)
     
     while True:
-        # yield env.timeout(rd.expovariate(lambda_))
-        yield env.timeout(env.now - log(random()) / lambda_0)
+        if source_distribution == system.distribution_types[0]:
+            yield env.timeout(env.now - log(random()) / lambda_0)
+        if source_distribution == system.distribution_types[1]:
+            tmp = lambda_0 + std_0 * (sum([random() for _ in range(12)]) - 6)
+            if tmp < 0: tmp = 0.001
+            yield env.timeout(env.now + tmp)
+        if source_distribution == system.distribution_types[2]:
+            yield env.timeout(env.now + lambda_0)
         system.cnt_demands[0].append(system.runway.count + len(system.runway.queue) + 1) 
         cnt += 1
         demand = Demand(cnt, env.now)
@@ -80,28 +91,32 @@ def run_system(env:simpy.Environment, system:Airport):
         env.process(go_to_runway(env, demand, system))  
 
 
-
-
-# Начальные данные
-cnt_executes = 10
-t_max = 10000
 result = open('results.txt', 'w')
 result.close()
 
+# Начальные данные
+cnt_executes = 1
+t_max = 10
 cnt_runways = 1 # число взлёток
 cnt_servers = 3 # число мест для тех обслуживания
-lambda_0 = 1 
+lambda_0 = 1
+std_0 = 0
 mu_runway = 2
+std_runway = 1
 mu_server = 3
-
+std_server = 0
+# 'экспоненциальное', 'нормальное', 'константа'
+source_distribution = 'константа'
+runway_distribution = 'экспоненциальное'
+server_distribution = 'экспоненциальное'
 
 for _ in range(cnt_executes):
     # Запуск моделирования
     times = open('times_out.txt', 'w')
     times.close()
     env = simpy.Environment()
-    system = Airport(env, cnt_runways, cnt_servers, mu_runway, mu_server)
-    env.process(run_system(env, system))
+    system = Airport(env, cnt_runways, cnt_servers, runway_distribution, server_distribution, mu_runway, std_runway, mu_server, std_server)
+    env.process(run_system(env, system, source_distribution, std_0))
     env.run(until=t_max)
 
     # Результаты
