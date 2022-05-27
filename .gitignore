@@ -129,3 +129,14 @@ dmypy.json
 .pyre/
 times_out.txt
 results.txt
+.idea/inspectionProfiles/profiles_settings.xml
+.idea/vcs.xml
+.idea/modules.xml
+.idea/misc.xml
+.idea/AirportSimModel.iml
+test.ui
+.idea/.gitignore
+demands_out_0.txt
+demands_out_1.txt
+dialog_error.ui
+test.txt
