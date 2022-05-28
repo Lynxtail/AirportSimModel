@@ -51,7 +51,7 @@ class Application(QtWidgets.QMainWindow):
         # нажатие на запуск
         # проверка введённых данных
         global t_max
-        t_max = 100000000
+        t_max = 10**2
         try:
             class DeterminationError(Exception):
                 pass
@@ -86,19 +86,10 @@ class Application(QtWidgets.QMainWindow):
 
         except ValueError:
             self.error(3)
-        
-
-    def stop_simulation(self):
-        print("Click stop")
-
-    def continue_simulation(self):
-        print("Click continue")
 
     def functions(self):
         # нажатие на кнопки
         self.ui.pushButton.clicked.connect(lambda: self.run())
-        self.ui.pushButton_2.clicked.connect(lambda: self.continue_simulation())
-        self.ui.pushButton_3.clicked.connect(lambda: self.stop_simulation())
 
 
 # функция поведения самолёта на взлётке
@@ -120,8 +111,8 @@ def go_to_runway(env:simpy.Environment, demand:Demand, system:Airport):
         times = open('times_out.txt', 'a')
         times.write(demand.get_info())
         times.close()
-        # print(f'...и самолёт {demand.num} успешно улетел!')
-        application.ui.progressBar.setValue(int(env.now / t_max * 100))
+        print(f'...и самолёт {demand.num} успешно улетел!')
+        application.ui.progressBar.setValue(int(env.now / t_max * 100) if env.now < t_max else 100)
         application.ui.textBrowser.append(f'...и самолёт {demand.num} успешно улетел!')
     else:
         demands_out_1 = open('demands_out_1.txt', 'a')
@@ -129,10 +120,10 @@ def go_to_runway(env:simpy.Environment, demand:Demand, system:Airport):
         demands_out_1.close()
         # system.cnt_demands[1].append(system.server.count + len(system.server.queue) + 1)
       
-        # print(f"Самолёт {demand.num} поступил на обслуживание в {env.now} -- ({'взлёт' if demand.takeoff else 'посадка'})")
-        application.ui.progressBar.setValue(int(env.now / t_max * 100))
+        print(f"Самолёт {demand.num} поступил на обслуживание в {env.now} -- ({'взлёт' if demand.takeoff else 'посадка'})")
+        application.ui.progressBar.setValue(int(env.now / t_max * 100) if env.now < t_max else 100)
         application.ui.textBrowser.append(f"Самолёт {demand.num} поступил на обслуживание в {env.now} -- ({'взлёт' if demand.takeoff else 'посадка'})")
-        # print(f'В момент {env.now} было {system.runway.count + len(system.runway.queue)} + {system.server.count + len(system.server.queue)} самолётов')
+        print(f'В момент {env.now} было {system.runway.count + len(system.runway.queue)} + {system.server.count + len(system.server.queue)} самолётов')
         application.ui.textBrowser.append(f'В момент {env.now} было {system.runway.count + len(system.runway.queue)} + {system.server.count + len(system.server.queue)} самолётов')
         env.process(go_to_server(env, demand, system))
 
@@ -156,10 +147,10 @@ def go_to_server(env:simpy.Environment, demand:Demand, system:Airport):
     demands_out_0.write(str(system.runway.count + len(system.runway.queue) + 1) + '\n')
     demands_out_0.close()
     # system.cnt_demands[0].append(system.runway.count + len(system.runway.queue) + 1)
-    # print(f"Самолёт {demand.num} поступил на взлётку в {env.now} -- ({'взлёт' if demand.takeoff else 'посадка'})")
-    application.ui.progressBar.setValue(int(env.now / t_max * 100))
+    print(f"Самолёт {demand.num} поступил на взлётку в {env.now} -- ({'взлёт' if demand.takeoff else 'посадка'})")
+    application.ui.progressBar.setValue(int(env.now / t_max * 100) if env.now < t_max else 100)
     application.ui.textBrowser.append(f"Самолёт {demand.num} поступил на взлётку в {env.now} -- ({'взлёт' if demand.takeoff else 'посадка'})")
-    # print(f'В момент {env.now} было {system.runway.count + len(system.runway.queue)} + {system.server.count + len(system.server.queue)} самолётов')
+    print(f'В момент {env.now} было {system.runway.count + len(system.runway.queue)} + {system.server.count + len(system.server.queue)} самолётов')
     application.ui.textBrowser.append(f'В момент {env.now} было {system.runway.count + len(system.runway.queue)} + {system.server.count + len(system.server.queue)} самолётов')
     env.process(go_to_runway(env, demand, system))
 
@@ -167,12 +158,12 @@ def go_to_server(env:simpy.Environment, demand:Demand, system:Airport):
 def run_system(application:Application, env:simpy.Environment, system:Airport, source_distribution, lambda_0, std_0):
     cnt = 1
     demand = Demand(cnt, random.choice([True, False]), env.now)
-    application.ui.progressBar.setValue(int(env.now / t_max * 100))
-    # print(f"Самолёт {demand.num} поступил на взлётку в {env.now} -- ({'взлёт' if demand.takeoff else 'посадка'})")
+    application.ui.progressBar.setValue(int(env.now / t_max * 100) if env.now < t_max else 100)
+    print(f"Самолёт {demand.num} поступил на взлётку в {env.now} -- ({'взлёт' if demand.takeoff else 'посадка'})")
     application.ui.textBrowser.append(f"Самолёт {demand.num} поступил на взлётку в {env.now} -- ({'взлёт' if demand.takeoff else 'посадка'})")
     env.process(go_to_runway(env, demand, system))
     
-    # print(f'В момент {env.now} было {system.runway.count + len(system.runway.queue)} + {system.server.count + len(system.server.queue)} самолётов')
+    print(f'В момент {env.now} было {system.runway.count + len(system.runway.queue)} + {system.server.count + len(system.server.queue)} самолётов')
     application.ui.textBrowser.append(f'В момент {env.now} было {system.runway.count + len(system.runway.queue)} + {system.server.count + len(system.server.queue)} самолётов')
     demands_out_0 = open('demands_out_0.txt', 'a')
     demands_out_0.write(str(system.runway.count + len(system.runway.queue) + 1) + '\n')
@@ -196,10 +187,10 @@ def run_system(application:Application, env:simpy.Environment, system:Airport, s
         cnt += 1
         # random.choice([True, False])
         demand = Demand(cnt, False, env.now)
-        # print(f"Самолёт {demand.num} поступил на взлётку в {env.now} -- ({'взлёт' if demand.takeoff else 'посадка'})")
-        application.ui.progressBar.setValue(int(env.now / t_max * 100))
+        print(f"Самолёт {demand.num} поступил на взлётку в {env.now} -- ({'взлёт' if demand.takeoff else 'посадка'})")
+        application.ui.progressBar.setValue(int(env.now / t_max * 100) if env.now < t_max else 100)
         application.ui.textBrowser.append(f"Самолёт {demand.num} поступил на взлётку в {env.now} -- ({'взлёт' if demand.takeoff else 'посадка'})")
-        # print(f'В момент {env.now} было {system.runway.count + len(system.runway.queue)} + {system.server.count + len(system.server.queue)} самолётов')  
+        print(f'В момент {env.now} было {system.runway.count + len(system.runway.queue)} + {system.server.count + len(system.server.queue)} самолётов')  
         application.ui.textBrowser.append(f'В момент {env.now} было {system.runway.count + len(system.runway.queue)} + {system.server.count + len(system.server.queue)} самолётов')
         env.process(go_to_runway(env, demand, system))  
         
@@ -228,14 +219,14 @@ def run_system(application:Application, env:simpy.Environment, system:Airport, s
             application.ui.label_20.setText(str(w[1]))
             application.ui.label_16.setText(str(u[0]))
             application.ui.label_19.setText(str(u[1]))
-            # print(f'\nСреднее время обслуживания на взлётке: {v[0]}')
-            # print(f'Среднее время обслуживания на стоянке: {v[1]}')
-            # print(f'\nСреднее время ожидания на взлётке: {w[0]}')
-            # print(f'Среднее время ожидания на стоянке: {w[1]}')
-            # print(f'\nСреднее время пребывания на взлётке: {u[0]}')
-            # print(f'Среднее время пребывания на стоянке: {u[1]}')
+            print(f'\nСреднее время обслуживания на взлётке: {v[0]}')
+            print(f'Среднее время обслуживания на стоянке: {v[1]}')
+            print(f'\nСреднее время ожидания на взлётке: {w[0]}')
+            print(f'Среднее время ожидания на стоянке: {w[1]}')
+            print(f'\nСреднее время пребывания на взлётке: {u[0]}')
+            print(f'Среднее время пребывания на стоянке: {u[1]}')
         else:
-            application.ui.textBrowser.append('There are no serviced demands!')        
+            application.ui.textBrowser.append('There are no serviced demands yet!')        
 
         states = [[], []]
         p = [[], []]
@@ -267,7 +258,8 @@ def run_system(application:Application, env:simpy.Environment, system:Airport, s
             if len(item) == 0:
                 item.append(1)
                 break
-        # print(f'\nСтационарное распределение:\n{p}')
+        print(f'\nСтационарное распределение:\n{p}')
+        print(f'check: {sum(p[0])}, {sum(p[1])}')
         tmp_string = ''
         for i in range(len(p[0])):
             tmp_string += f'{p[0][i]:.4f} '
@@ -290,7 +282,7 @@ def run_system(application:Application, env:simpy.Environment, system:Airport, s
 def simulation_input(application:Application, cnt_runways, cnt_servers, lambda_0, std_0, 
 mu_runway, k_runway, std_runway, 
 mu_server, k_server, std_server, 
-source_distribution, runway_distribution, server_distribution, t_max=10**10):
+source_distribution, runway_distribution, server_distribution, t_max):
     
     # блокировка кнопки запуск и полей с параметрами
     application.ui.pushButton.setEnabled(False)
@@ -318,7 +310,8 @@ source_distribution, runway_distribution, server_distribution, t_max=10**10):
     env = simpy.Environment()
     system = Airport(application, env, t_max, cnt_runways, cnt_servers, runway_distribution, server_distribution, mu_runway, mu_server, k_runway, std_runway, k_server, std_server)
     env.process(run_system(application, env, system, source_distribution, lambda_0, std_0))
-    env.run(until=t_max)
+    # env.run(until=t_max)
+    env.run()
 
 
 if __name__ == "__main__":
