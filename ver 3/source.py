@@ -44,7 +44,8 @@ class Application(QtWidgets.QMainWindow):
             QtWidgets.QMessageBox.Ok)
         if code == 3:
             QtWidgets.QMessageBox.critical(self, "Ошибка ", 
-            "Проверьте корректность входных данных", 
+            f"Проверьте корректность входных данных",
+            # {list(map(, [(self.ui.lineEdit_5.text()), float(self.ui.lineEdit_6.text()), float(self.ui.lineEdit.text()), float(self.ui.lineEdit_2.text()), float(self.ui.lineEdit_3.text()), float(self.ui.lineEdit_4.text()), t_max]))}", 
             QtWidgets.QMessageBox.Ok)
 
     def run(self):
@@ -52,6 +53,14 @@ class Application(QtWidgets.QMainWindow):
         # проверка введённых данных
         global t_max
         t_max = 10**2
+
+        lambda_0 = 1
+        std_0 = 0
+        mu_runway = 6
+        std_runway = 0
+        mu_server = 2 
+        std_server = 0
+
         try:
             class DeterminationError(Exception):
                 pass
@@ -61,17 +70,27 @@ class Application(QtWidgets.QMainWindow):
                 pass
 
             if any(item == "Распределение" 
-            for item in [self.ui.comboBox_3.currentText(), self.ui.comboBox.currentText(), self.ui.comboBox_2.currentText()]):
+            for item in [self.ui.comboBox_3.currentText(), 
+            self.ui.comboBox.currentText(), self.ui.comboBox_2.currentText()]):
                 raise DeterminationError()
             if self.ui.comboBox.currentText() == "Эрланга" and not self.ui.spinBox_2.isEnabled():
                 raise ErlangError_1()
             if self.ui.comboBox_2.currentText() == "Эрланга" and not self.ui.spinBox_3.isEnabled():
                 raise ErlangError_2
+            
+            lambda_0 = float(self.ui.lineEdit_5.text())
+            std_0 = float(self.ui.lineEdit_6.text())
+            mu_runway = float(self.ui.lineEdit.text())
+            std_runway = float(self.ui.lineEdit_2.text())
+            mu_server = float(self.ui.lineEdit_3.text()) 
+            std_server = float(self.ui.lineEdit_4.text())
+
             simulation_input(self, self.ui.spinBox.value(), self.ui.spinBox_4.value(), 
-                float(self.ui.lineEdit_5.text()), float(self.ui.lineEdit_6.text()), 
-                float(self.ui.lineEdit.text()), self.ui.spinBox_2.value(), float(self.ui.lineEdit_2.text()),
-                float(self.ui.lineEdit_3.text()), self.ui.spinBox_3.value(), float(self.ui.lineEdit_4.text()), 
-                self.ui.comboBox_3.currentText(), self.ui.comboBox.currentText(), self.ui.comboBox_2.currentText(), t_max)
+                lambda_0, std_0, mu_runway, self.ui.spinBox_2.value(), 
+                std_runway, mu_server, 
+                self.ui.spinBox_3.value(), std_server, 
+                self.ui.comboBox_3.currentText(), self.ui.comboBox.currentText(), 
+                self.ui.comboBox_2.currentText(), t_max)
 
         except DeterminationError:
             self.error(1)
@@ -86,6 +105,21 @@ class Application(QtWidgets.QMainWindow):
 
         except ValueError:
             self.error(3)
+
+        # finally:
+        #     self.ui.lineEdit_5.setText(str(lambda_0))
+        #     self.ui.lineEdit_6.setText(str(std_0))
+        #     self.ui.lineEdit.setText(str(mu_runway))
+        #     self.ui.lineEdit_2.setText(str(std_runway))
+        #     self.ui.lineEdit_3.setText(str(mu_server))
+        #     self.ui.lineEdit_4.setText(str(std_server))
+            
+        #     simulation_input(self, self.ui.spinBox.value(), self.ui.spinBox_4.value(), 
+        #         lambda_0, std_0, mu_runway, self.ui.spinBox_2.value(), 
+        #         std_runway, mu_server, 
+        #         self.ui.spinBox_3.value(), std_server, 
+        #         self.ui.comboBox_3.currentText(), self.ui.comboBox.currentText(), 
+        #         self.ui.comboBox_2.currentText(), t_max)
 
     def functions(self):
         # нажатие на кнопки
@@ -112,7 +146,8 @@ def go_to_runway(env:simpy.Environment, demand:Demand, system:Airport):
         times.write(demand.get_info())
         times.close()
         print(f'...и самолёт {demand.num} успешно улетел!')
-        application.ui.progressBar.setValue(int(env.now / t_max * 100) if env.now < t_max else 100)
+        application.ui.progressBar.setValue(int(env.now / t_max * 100) 
+            if env.peek() < t_max else 100)
         application.ui.textBrowser.append(f'...и самолёт {demand.num} успешно улетел!')
     else:
         demands_out_1 = open('demands_out_1.txt', 'a')
@@ -121,7 +156,8 @@ def go_to_runway(env:simpy.Environment, demand:Demand, system:Airport):
         # system.cnt_demands[1].append(system.server.count + len(system.server.queue) + 1)
       
         print(f"Самолёт {demand.num} поступил на обслуживание в {env.now} -- ({'взлёт' if demand.takeoff else 'посадка'})")
-        application.ui.progressBar.setValue(int(env.now / t_max * 100) if env.now < t_max else 100)
+        application.ui.progressBar.setValue(int(env.now / t_max * 100) 
+            if env.peek() < t_max else 100)
         application.ui.textBrowser.append(f"Самолёт {demand.num} поступил на обслуживание в {env.now} -- ({'взлёт' if demand.takeoff else 'посадка'})")
         print(f'В момент {env.now} было {system.runway.count + len(system.runway.queue)} + {system.server.count + len(system.server.queue)} самолётов')
         application.ui.textBrowser.append(f'В момент {env.now} было {system.runway.count + len(system.runway.queue)} + {system.server.count + len(system.server.queue)} самолётов')
@@ -148,17 +184,19 @@ def go_to_server(env:simpy.Environment, demand:Demand, system:Airport):
     demands_out_0.close()
     # system.cnt_demands[0].append(system.runway.count + len(system.runway.queue) + 1)
     print(f"Самолёт {demand.num} поступил на взлётку в {env.now} -- ({'взлёт' if demand.takeoff else 'посадка'})")
-    application.ui.progressBar.setValue(int(env.now / t_max * 100) if env.now < t_max else 100)
+    application.ui.progressBar.setValue(int(env.now / t_max * 100) if env.peek() < t_max else 100)
     application.ui.textBrowser.append(f"Самолёт {demand.num} поступил на взлётку в {env.now} -- ({'взлёт' if demand.takeoff else 'посадка'})")
     print(f'В момент {env.now} было {system.runway.count + len(system.runway.queue)} + {system.server.count + len(system.server.queue)} самолётов')
     application.ui.textBrowser.append(f'В момент {env.now} было {system.runway.count + len(system.runway.queue)} + {system.server.count + len(system.server.queue)} самолётов')
     env.process(go_to_runway(env, demand, system))
 
 # функция запуска работы модели
-def run_system(application:Application, env:simpy.Environment, system:Airport, source_distribution, lambda_0, std_0):
+def run_system(application:Application, env:simpy.Environment, 
+system:Airport, source_distribution, lambda_0, std_0):
     cnt = 1
     demand = Demand(cnt, random.choice([True, False]), env.now)
-    application.ui.progressBar.setValue(int(env.now / t_max * 100) if env.now < t_max else 100)
+    application.ui.progressBar.setValue(int(env.now / t_max * 100) 
+        if env.peek() < t_max else 100)
     print(f"Самолёт {demand.num} поступил на взлётку в {env.now} -- ({'взлёт' if demand.takeoff else 'посадка'})")
     application.ui.textBrowser.append(f"Самолёт {demand.num} поступил на взлётку в {env.now} -- ({'взлёт' if demand.takeoff else 'посадка'})")
     env.process(go_to_runway(env, demand, system))
@@ -166,7 +204,7 @@ def run_system(application:Application, env:simpy.Environment, system:Airport, s
     print(f'В момент {env.now} было {system.runway.count + len(system.runway.queue)} + {system.server.count + len(system.server.queue)} самолётов')
     application.ui.textBrowser.append(f'В момент {env.now} было {system.runway.count + len(system.runway.queue)} + {system.server.count + len(system.server.queue)} самолётов')
     demands_out_0 = open('demands_out_0.txt', 'a')
-    demands_out_0.write(str(system.runway.count + len(system.runway.queue) + 1) + '\n')
+    demands_out_0.write(str(system.runway.count + len(system.runway.queue) + 1) + '')
     demands_out_0.close()
     # system.cnt_demands[0].append(system.runway.count + len(system.runway.queue) + 1)
     
@@ -174,21 +212,22 @@ def run_system(application:Application, env:simpy.Environment, system:Airport, s
         # генерация требования
         if source_distribution == system.distribution_types[0]:
             yield env.timeout(env.now - log(random.random()) / lambda_0)
-        if source_distribution == system.distribution_types[1]:
+        elif source_distribution == system.distribution_types[1]:
             tmp = lambda_0 + std_0 * (sum([random.random() for _ in range(12)]) - 6)
             if tmp < 0: tmp = 0.001
             yield env.timeout(env.now + tmp)
-        if source_distribution == system.distribution_types[2]:
-            yield env.timeout(env.now + lambda_0)
+        elif source_distribution == system.distribution_types[2]:
+            yield env.timeout(env.now + 1 / lambda_0)
         demands_out_0 = open('demands_out_0.txt', 'a')
-        demands_out_0.write(str(system.runway.count + len(system.runway.queue) + 1) + '\n')
+        demands_out_0.write(str(system.runway.count + len(system.runway.queue) + 1) + '')
         demands_out_0.close()
         # system.cnt_demands[0].append(system.runway.count + len(system.runway.queue) + 1) 
         cnt += 1
         # random.choice([True, False])
         demand = Demand(cnt, False, env.now)
         print(f"Самолёт {demand.num} поступил на взлётку в {env.now} -- ({'взлёт' if demand.takeoff else 'посадка'})")
-        application.ui.progressBar.setValue(int(env.now / t_max * 100) if env.now < t_max else 100)
+        application.ui.progressBar.setValue(int(env.now / t_max * 100) 
+            if env.peek() < t_max else 100)
         application.ui.textBrowser.append(f"Самолёт {demand.num} поступил на взлётку в {env.now} -- ({'взлёт' if demand.takeoff else 'посадка'})")
         print(f'В момент {env.now} было {system.runway.count + len(system.runway.queue)} + {system.server.count + len(system.server.queue)} самолётов')  
         application.ui.textBrowser.append(f'В момент {env.now} было {system.runway.count + len(system.runway.queue)} + {system.server.count + len(system.server.queue)} самолётов')
@@ -201,7 +240,8 @@ def run_system(application:Application, env:simpy.Environment, system:Airport, s
         if os.stat("times_out.txt").st_size != 0:
             times = open('times_out.txt', 'r')
             for line in times:
-                _, _, v_1_, w_1_, u_1_, v_2_, w_2_, u_2_ = [float(item) for item in line.split(' ')]
+                _, _, v_1_, w_1_, u_1_, v_2_, w_2_, u_2_ = [float(item) 
+                    for item in line.split(' ')]
                 v[0].append(v_1_)
                 w[0].append(w_1_)
                 u[0].append(u_1_)
@@ -219,11 +259,11 @@ def run_system(application:Application, env:simpy.Environment, system:Airport, s
             application.ui.label_20.setText(str(w[1]))
             application.ui.label_16.setText(str(u[0]))
             application.ui.label_19.setText(str(u[1]))
-            print(f'\nСреднее время обслуживания на взлётке: {v[0]}')
+            print(f' время обслуживания на взлётке: {v[0]}')
             print(f'Среднее время обслуживания на стоянке: {v[1]}')
-            print(f'\nСреднее время ожидания на взлётке: {w[0]}')
+            print(f' время ожидания на взлётке: {w[0]}')
             print(f'Среднее время ожидания на стоянке: {w[1]}')
-            print(f'\nСреднее время пребывания на взлётке: {u[0]}')
+            print(f' время пребывания на взлётке: {u[0]}')
             print(f'Среднее время пребывания на стоянке: {u[1]}')
         else:
             application.ui.textBrowser.append('There are no serviced demands yet!')        
@@ -258,7 +298,7 @@ def run_system(application:Application, env:simpy.Environment, system:Airport, s
             if len(item) == 0:
                 item.append(1)
                 break
-        print(f'\nСтационарное распределение:\n{p}')
+        print(f' распределение:{p}')
         print(f'check: {sum(p[0])}, {sum(p[1])}')
         tmp_string = ''
         for i in range(len(p[0])):
@@ -273,15 +313,15 @@ def run_system(application:Application, env:simpy.Environment, system:Airport, s
                 tmp_string += '\n'
         application.ui.label_22.setText(str(tmp_string))
 
-        n = [[sum([item * p[0][item] for item in range(len(p[0]))])], [sum([item * p[1][item] for item in range(len(p[1]))])]]
-        # print(f'\nСреднее число требований в сети:\n{n}')
+        n = [[sum([item * p[0][item] for item in range(len(p[0]))])], 
+            [sum([item * p[1][item] for item in range(len(p[1]))])]]
+        print(f' число требований в сети:{n}')
         application.ui.label_17.setText(str(n[0]))
         application.ui.label_21.setText(str(n[1]))
 
 
-def simulation_input(application:Application, cnt_runways, cnt_servers, lambda_0, std_0, 
-mu_runway, k_runway, std_runway, 
-mu_server, k_server, std_server, 
+def simulation_input(application:Application, cnt_runways, cnt_servers, 
+lambda_0, std_0, mu_runway, k_runway, std_runway, mu_server, k_server, std_server, 
 source_distribution, runway_distribution, server_distribution, t_max):
     
     # блокировка кнопки запуск и полей с параметрами
@@ -308,10 +348,13 @@ source_distribution, runway_distribution, server_distribution, t_max):
     demands_out_1 = open('demands_out_1.txt', 'w')
     demands_out_1.close()
     env = simpy.Environment()
-    system = Airport(application, env, t_max, cnt_runways, cnt_servers, runway_distribution, server_distribution, mu_runway, mu_server, k_runway, std_runway, k_server, std_server)
-    env.process(run_system(application, env, system, source_distribution, lambda_0, std_0))
-    # env.run(until=t_max)
-    env.run()
+    system = Airport(application, env, t_max, cnt_runways, cnt_servers, 
+        runway_distribution, server_distribution, mu_runway, mu_server, 
+        k_runway, std_runway, k_server, std_server)
+    env.process(run_system(application, env, system, source_distribution, 
+        lambda_0, std_0))
+    env.run(until=t_max)
+    # env.run()
 
 
 if __name__ == "__main__":
