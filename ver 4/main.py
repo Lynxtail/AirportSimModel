@@ -42,7 +42,7 @@ class Application(QtWidgets.QMainWindow):
         # нажатие на запуск
         # проверка введённых данных
         global t_max
-        t_max = 10**2
+        t_max = 10**3
 
         lambda_0 = 1
         std_0 = 0
@@ -54,19 +54,15 @@ class Application(QtWidgets.QMainWindow):
         try:
             class DeterminationError(Exception):
                 pass
-            class ErlangError_1(Exception):
-                pass
-            class ErlangError_2(Exception):
+            class ErlangError(Exception):
                 pass
 
             if any(item == "Распределение" 
             for item in [self.ui.comboBox_3.currentText(), 
             self.ui.comboBox.currentText(), self.ui.comboBox_2.currentText()]):
                 raise DeterminationError()
-            if self.ui.comboBox.currentText() == "Эрланга" and not self.ui.spinBox_2.isEnabled():
-                raise ErlangError_1()
-            if self.ui.comboBox_2.currentText() == "Эрланга" and not self.ui.spinBox_3.isEnabled():
-                raise ErlangError_2
+            if self.ui.comboBox.currentText() == "Эрланга" and not self.ui.spinBox_2.isEnabled() or self.ui.comboBox_2.currentText() == "Эрланга" and not self.ui.spinBox_3.isEnabled():
+                raise ErlangError()
             
             lambda_0 = float(self.ui.lineEdit_5.text())
             std_0 = float(self.ui.lineEdit_6.text())
@@ -74,6 +70,8 @@ class Application(QtWidgets.QMainWindow):
             std_runway = float(self.ui.lineEdit_2.text())
             mu_parking = float(self.ui.lineEdit_3.text()) 
             std_parking = float(self.ui.lineEdit_4.text())
+
+            # t_max = 10**6 / lambda_0
 
             run_system(self, self.ui.spinBox.value(), self.ui.spinBox_4.value(), 
                 lambda_0, std_0, mu_runway, self.ui.spinBox_2.value(), 
@@ -85,11 +83,8 @@ class Application(QtWidgets.QMainWindow):
         except DeterminationError:
             self.error(1)
 
-        except ErlangError_1:
+        except ErlangError:
             self.ui.spinBox_2.setEnabled(True)
-            self.error(2)
-
-        except ErlangError_2:
             self.ui.spinBox_3.setEnabled(True)
             self.error(2)
 
@@ -131,7 +126,7 @@ def generate_random_value(type, lambda_, std=0, k=1):
         return tmp
     # постоянная величина
     elif type == distribution_types[2]:
-        return 1 / lambda_
+        return lambda_
 
 def run_system(application:Application, cnt_runways, cnt_parking, 
 lambda_0, std_0, mu_runway, k_runway, std_runway, mu_parking, k_parking, std_parking, 
@@ -283,6 +278,7 @@ source_distribution, runway_distribution, parking_distribution, t_max):
 
             if runway_service_demands[ind].takeoff == True:
                 application.ui.textBrowser.append(f'Момент {t_now}: самолёт {runway_service_demands[ind].num} покидает аэропорт.')
+                runway_service_demands.pop(ind)
             else:
                 parking_queue_demands.append(runway_service_demands.pop(ind))
 
@@ -400,12 +396,12 @@ source_distribution, runway_distribution, parking_distribution, t_max):
             
             if len(p[0]) > 16:
                 tmp_string = ''
-                for i in range(4):
+                for i in range(8):
                     tmp_string += f'{p[0][i]:.4f} '
                     if (i + 1) % 4 == 0:
                         tmp_string += '\n'
                 tmp_string += '\n\t...\t\n'
-                for i in range(len(p[0]) - 4, len(p[0])):
+                for i in range(len(p[0]) - 8, len(p[0])):
                     tmp_string += f'{p[0][i]:.4f} '
                     if (i + 1) % 4 == 0:
                         tmp_string += '\n'
@@ -420,12 +416,12 @@ source_distribution, runway_distribution, parking_distribution, t_max):
             
             if len(p[1]) > 16:
                 tmp_string = ''
-                for i in range(4):
+                for i in range(8):
                     tmp_string += f'{p[1][i]:.4f} '
                     if (i + 1) % 4 == 0:
                         tmp_string += '\n'
                 tmp_string += '\n\t...\t\n'
-                for i in range(len(p[1]) - 4, len(p[1])):
+                for i in range(len(p[1]) - 8, len(p[1])):
                     tmp_string += f'{p[1][i]:.4f} '
                     if (i + 1) % 4 == 0:
                         tmp_string += '\n'
@@ -438,8 +434,9 @@ source_distribution, runway_distribution, parking_distribution, t_max):
                         tmp_string += '\n'
                 application.ui.label_22.setText(str(tmp_string))
 
-            n = [[sum([item * p[0][item] for item in range(len(p[0]))])], 
-                [sum([item * p[1][item] for item in range(len(p[1]))])]]
+            # n = [[sum([item * p[0][item] for item in range(len(p[0]))])], 
+            #     [sum([item * p[1][item] for item in range(len(p[1]))])]]
+            n = [[u[0][0] * serviced_demands[0] / t_max], [u[1][0] * serviced_demands[1] / t_max]]
             print(f'Среднее число требований в сети:{n}')
             application.ui.label_17.setText(str(n[0]))
             application.ui.label_21.setText(str(n[1]))
