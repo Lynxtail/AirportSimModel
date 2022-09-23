@@ -36,9 +36,9 @@
     </size>
    </property>
    <property name="styleSheet">
-    <string notr="true">background-color: rgb(65, 65, 65);
-selection-color: rgb(195, 24, 24);
-color: rgb(207, 197, 255);</string>
+    <string notr="true">background-color: rgb(217, 217, 217);
+color: rgb(0, 0, 0);
+selection-color: rgb(195, 24, 24);</string>
    </property>
    <widget class="QFrame" name="frame">
     <property name="enabled">
@@ -65,7 +65,7 @@ color: rgb(207, 197, 255);</string>
      </size>
     </property>
     <property name="styleSheet">
-     <string notr="true">background-color: rgb(80, 80, 80);</string>
+     <string notr="true">background-color: rgb(255, 255, 255);</string>
     </property>
     <property name="frameShape">
      <enum>QFrame::Box</enum>
@@ -481,7 +481,7 @@ color: rgb(207, 197, 255);</string>
      </size>
     </property>
     <property name="styleSheet">
-     <string notr="true">background-color: rgb(80, 80, 80);</string>
+     <string notr="true">background-color: rgb(255, 255, 255);</string>
     </property>
     <property name="frameShape">
      <enum>QFrame::Box</enum>
@@ -623,7 +623,7 @@ color: rgb(207, 197, 255);</string>
      </size>
     </property>
     <property name="styleSheet">
-     <string notr="true">background-color: rgb(80, 80, 80);</string>
+     <string notr="true">background-color: rgb(255, 255, 255);</string>
     </property>
     <property name="frameShape">
      <enum>QFrame::Box</enum>
