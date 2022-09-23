@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'E:\NoCode\AirportSimModel\cool_window.ui'
+# Form implementation generated from reading ui file 'E:\NoCode\AirportSimModel\ver 3\cool_window.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.6
 #
@@ -20,16 +20,16 @@ class Ui_Simulation(object):
         self.centralwidget = QtWidgets.QWidget(Simulation)
         self.centralwidget.setEnabled(True)
         self.centralwidget.setMinimumSize(QtCore.QSize(923, 665))
-        self.centralwidget.setStyleSheet("background-color: rgb(65, 65, 65);\n"
-"selection-color: rgb(195, 24, 24);\n"
-"color: rgb(207, 197, 255);")
+        self.centralwidget.setStyleSheet("background-color: rgb(217, 217, 217);\n"
+"color: rgb(0, 0, 0);\n"
+"selection-color: rgb(195, 24, 24);")
         self.centralwidget.setObjectName("centralwidget")
         self.frame = QtWidgets.QFrame(self.centralwidget)
         self.frame.setEnabled(True)
         self.frame.setGeometry(QtCore.QRect(10, 10, 351, 291))
         self.frame.setMinimumSize(QtCore.QSize(351, 291))
         self.frame.setMaximumSize(QtCore.QSize(351, 291))
-        self.frame.setStyleSheet("background-color: rgb(80, 80, 80);")
+        self.frame.setStyleSheet("background-color: rgb(255, 255, 255);")
         self.frame.setFrameShape(QtWidgets.QFrame.Box)
         self.frame.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.frame.setObjectName("frame")
@@ -164,7 +164,7 @@ class Ui_Simulation(object):
         self.frame_4 = QtWidgets.QFrame(self.centralwidget)
         self.frame_4.setGeometry(QtCore.QRect(370, 10, 541, 291))
         self.frame_4.setMinimumSize(QtCore.QSize(541, 291))
-        self.frame_4.setStyleSheet("background-color: rgb(80, 80, 80);")
+        self.frame_4.setStyleSheet("background-color: rgb(255, 255, 255);")
         self.frame_4.setFrameShape(QtWidgets.QFrame.Box)
         self.frame_4.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.frame_4.setObjectName("frame_4")
@@ -210,7 +210,7 @@ class Ui_Simulation(object):
         self.frame_7.setSizePolicy(sizePolicy)
         self.frame_7.setMinimumSize(QtCore.QSize(901, 341))
         self.frame_7.setMaximumSize(QtCore.QSize(16777215, 1800))
-        self.frame_7.setStyleSheet("background-color: rgb(80, 80, 80);")
+        self.frame_7.setStyleSheet("background-color: rgb(255, 255, 255);")
         self.frame_7.setFrameShape(QtWidgets.QFrame.Box)
         self.frame_7.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.frame_7.setObjectName("frame_7")
